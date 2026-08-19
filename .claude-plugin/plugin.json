@@ -1,0 +1,5 @@
+{
+  "name": "board-discipline",
+  "version": "0.1.0",
+  "description": "Kanban board discipline for agents: Backlog.md as source of truth, hooks for state honesty, /onboard for per-repo ways of working."
+}
