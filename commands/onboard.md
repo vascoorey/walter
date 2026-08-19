@@ -12,7 +12,7 @@ You are onboarding this repository onto a kanban-driven agentic workflow. The bo
 
 ## Step 2 — Initialize the board
 
-- Run `backlog init` (accept defaults, non-interactive flags where available).
+- Run `backlog init "<repo name>" --agent-instructions none --check-branches false --include-remote false` (bare `backlog init` opens an interactive wizard that hangs in a tool call — always pass these flags; verified against backlog 1.50.1).
 - Configure statuses to include the workflow columns. Target status set (confirm with user in Step 3 before applying): `Triage`, `To Do`, `In Progress`, `Review`, `Done`. Edit `backlog/config.yml` statuses accordingly.
 - Create `backlog/decisions/` if it doesn't exist.
 
