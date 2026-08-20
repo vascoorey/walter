@@ -4,9 +4,13 @@
 # and recently-touched decision docs. Fail-open: if repo isn't onboarded, stay silent.
 set -uo pipefail
 
+# All board-tool knowledge lives in lib/board.sh. A missing lib means a broken
+# install, not a broken user environment: fail open rather than break the session.
+. "$(dirname "${BASH_SOURCE[0]}")/lib/board.sh" 2>/dev/null || exit 0
+
 CONFIG=".board/config.json"
 [ -f "$CONFIG" ] || exit 0
-command -v backlog >/dev/null 2>&1 || { echo "[board] backlog CLI not found — board state unavailable this session."; exit 0; }
+board_available || { echo "[board] $BOARD_TOOL CLI not found — board state unavailable this session."; exit 0; }
 command -v jq >/dev/null 2>&1 || exit 0
 
 REVIEW_STATUS=$(jq -r '.review_status // "Review"' "$CONFIG")
@@ -18,17 +22,15 @@ DECISIONS_DIR=$(jq -r '.decisions_dir // "backlog/decisions"' "$CONFIG")
 echo "## Board state (source of truth — keep it accurate in real time)"
 echo ""
 
-# Full board, one line per task. --plain keeps it terminal/agent friendly.
-backlog board --plain 2>/dev/null || backlog task list --plain 2>/dev/null || echo "(could not read board)"
+board_summary || echo "(could not read board)"
 echo ""
 
 # Surface any task already claimed as In Progress in full detail.
-# Prefix-agnostic: ids sit at the start of --plain list lines ("  <PREFIX>-<N> - ...").
-IN_PROGRESS=$(backlog task list --plain -s "In Progress" 2>/dev/null | grep -oE '^[[:space:]]*[A-Za-z]+-[0-9]+(\.[0-9]+)?' | tr -d ' ' | sort -uf)
+IN_PROGRESS=$(board_ids_in_status "In Progress")
 if [ -n "$IN_PROGRESS" ]; then
   echo "### In Progress (your current focus — finish these before pulling new work)"
   for T in $IN_PROGRESS; do
-    backlog task "$T" --plain 2>/dev/null
+    board_show "$T"
     echo "---"
   done
 else
@@ -38,14 +40,14 @@ echo ""
 
 # Parked tasks: the handoff round-trip. In Progress means actively executing;
 # these columns hold work that stopped honestly. Resuming one REQUIRES moving it back.
-HUMAN_PARKED=$(backlog task list --plain -s "$HUMAN_STATUS" 2>/dev/null | grep -E '^[[:space:]]*[A-Za-z]+-[0-9]+' || true)
+HUMAN_PARKED=$(board_lines_in_status "$HUMAN_STATUS")
 if [ -n "$HUMAN_PARKED" ]; then
   echo "### $HUMAN_STATUS (waiting on the human — read the task notes for what was asked)"
   echo "$HUMAN_PARKED"
   echo "If the human has answered and you are resuming one: move it back to In Progress via the CLI BEFORE touching code."
   echo ""
 fi
-BLOCKED_PARKED=$(backlog task list --plain -s "$BLOCKED_STATUS" 2>/dev/null | grep -E '^[[:space:]]*[A-Za-z]+-[0-9]+' || true)
+BLOCKED_PARKED=$(board_lines_in_status "$BLOCKED_STATUS")
 if [ -n "$BLOCKED_PARKED" ]; then
   echo "### $BLOCKED_STATUS (external impediments — notes name each blocker)"
   echo "$BLOCKED_PARKED"
@@ -69,5 +71,5 @@ echo "- One task In Progress at a time. Status updates happen in real time, not 
 echo "- In Progress means actively executing. Stopping? Land the plane: '$REVIEW_STATUS' with evidence, '$BLOCKED_STATUS' (external impediment), '$HUMAN_STATUS' (ball in the human's court), or a follow-up task."
 echo "- '$REVIEW_STATUS' is the most you can set. 'Done' is human-only."
 echo "- Discovered work (bugs, refactors, missing deps): create a new task in '$TRIAGE_STATUS', link it, stay on your current task."
-echo "- Never edit backlog/tasks/*.md directly — use the backlog CLI."
+echo "- Never edit task files directly. Use: $(board_mutate_hint)"
 exit 0

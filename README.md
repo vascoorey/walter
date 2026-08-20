@@ -63,6 +63,7 @@ writes   promotes  Needs        ceiling  only
 .claude-plugin/plugin.json        manifest
 commands/onboard.md               /onboard interview + setup
 hooks/hooks.json                  event wiring
+hooks/scripts/lib/board.sh        every board-tool touchpoint (queries, id pattern, guard patterns)
 hooks/scripts/session-start.sh    context injection (board, claimed task, parked tasks, decisions)
 hooks/scripts/guard-transitions.sh  denies human-gated transitions + bash writes to task/plan files
 hooks/scripts/guard-task-files.sh   CLI-only mutations; blocks rogue plan files (Write/Edit)

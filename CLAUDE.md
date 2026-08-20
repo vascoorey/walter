@@ -26,7 +26,7 @@ The Backlog.md board is the single source of truth for intent and state. Hooks e
 - Shared decisions are binding. Contradicting one requires a new decision doc, agreed with the human.
 
 **Verification** (Stop-gate runs this — you cannot finish while it's red)
-- Command: `bash -n hooks/scripts/*.sh && jq -e . hooks/hooks.json .claude-plugin/plugin.json .claude-plugin/marketplace.json >/dev/null`
+- Command: `bash -n hooks/scripts/*.sh hooks/scripts/lib/*.sh && jq -e . hooks/hooks.json .claude-plugin/plugin.json .claude-plugin/marketplace.json >/dev/null`
 - Definition of Done baseline (seeded as acceptance criteria on every task):
   - Verified end-to-end in a scratch repo (../automation-pal or throwaway)
   - README updated if behavior changed

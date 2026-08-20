@@ -5,6 +5,11 @@
 # and the soft "land the plane" check only fires on the first stop attempt.
 set -uo pipefail
 
+# All board-tool knowledge lives in lib/board.sh. Sourced without an early exit on
+# failure: Gate 1 needs no board tool, so a broken install must not disarm it.
+# Gate 2 checks that the lib actually loaded before using it.
+. "$(dirname "${BASH_SOURCE[0]}")/lib/board.sh" 2>/dev/null || true
+
 CONFIG=".board/config.json"
 [ -f "$CONFIG" ] || exit 0
 command -v jq >/dev/null 2>&1 || exit 0
@@ -76,13 +81,11 @@ ${TAIL}"
 fi
 
 # --- Gate 2: land the plane (first stop attempt only) ---
-if [ "$STOP_ACTIVE" != "true" ] && command -v backlog >/dev/null 2>&1; then
+if [ "$STOP_ACTIVE" != "true" ] && command -v board_available >/dev/null 2>&1 && board_available; then
   REVIEW_STATUS=$(jq -r '.review_status // "Review"' "$CONFIG")
   BLOCKED_STATUS=$(jq -r '.blocked_status // "Blocked"' "$CONFIG")
   HUMAN_STATUS=$(jq -r '.human_attention_status // "Needs Attention"' "$CONFIG")
-  # Prefix-agnostic: --plain list lines are "  <PREFIX>-<N> - <title>"; anchoring
-  # start-of-line avoids false matches on id-shaped words inside titles.
-  IN_PROGRESS=$(backlog task list --plain -s "In Progress" 2>/dev/null | grep -cE '^[[:space:]]*[A-Za-z]+-[0-9]+' || true)
+  IN_PROGRESS=$(board_lines_in_status "In Progress" | grep -c . || true)
   if [ "${IN_PROGRESS:-0}" -gt 0 ]; then
     block "Land the plane before stopping. ${IN_PROGRESS} task(s) still In Progress — In Progress means actively executing, and you are stopping. For each one, exactly one of:
 1. Finished: check off acceptance criteria via the CLI, add verification evidence to notes, move to '${REVIEW_STATUS}'.
