@@ -17,16 +17,16 @@ STOP_ACTIVE=$(printf '%s' "$INPUT" | jq -r '.stop_hook_active // false')
 # than 7 days — dead sessions and repos otherwise accumulate forever on platforms
 # that don't purge /tmp. Aging a live green stamp merely costs one extra test run.
 # Trailing slash: /tmp is a symlink on macOS and find won't traverse a symlink start point.
-find /tmp/ -maxdepth 1 -name 'board-discipline-*' -type f -mtime +7 -delete 2>/dev/null || true
+find /tmp/ -maxdepth 1 -name 'walter-*' -type f -mtime +7 -delete 2>/dev/null || true
 
 # Counter is per-session by definition: a resume/compaction that changes session_id
 # re-arms a capped gate (fresh count). Deliberate — the cap guards against loops
 # within one conversation, not across them.
-COUNTER_FILE="/tmp/board-discipline-stop-${SESSION_ID}"
+COUNTER_FILE="/tmp/walter-stop-${SESSION_ID}"
 COUNT=$(cat "$COUNTER_FILE" 2>/dev/null || echo 0)
 if [ "$COUNT" -ge 3 ]; then
   # Give up blocking to avoid an infinite loop; surface loudly instead.
-  echo '{"systemMessage":"board-discipline: stop-gate hit its retry cap (3). Verification may still be failing — check manually."}'
+  echo '{"systemMessage":"walter: stop-gate hit its retry cap (3). Verification may still be failing — check manually."}'
   exit 0
 fi
 
@@ -56,7 +56,7 @@ content_hash() {
 TEST_CMD=$(jq -r '.test_command // empty' "$CONFIG")
 if [ -n "$TEST_CMD" ]; then
   # ponytail: green stamps live in /tmp keyed by cwd hash; hygiene is task-5
-  STAMP="/tmp/board-discipline-green-$(pwd | shasum | cut -d' ' -f1)"
+  STAMP="/tmp/walter-green-$(pwd | shasum | cut -d' ' -f1)"
   HASH=$(content_hash) || HASH=""
   if [ -z "$HASH" ] || [ ! -f "$STAMP" ] || [ "$(cat "$STAMP" 2>/dev/null)" != "$HASH" ]; then
     TEST_OUTPUT=$(bash -c "$TEST_CMD" 2>&1)
@@ -79,7 +79,7 @@ fi
 if [ "$STOP_ACTIVE" != "true" ] && command -v backlog >/dev/null 2>&1; then
   REVIEW_STATUS=$(jq -r '.review_status // "Review"' "$CONFIG")
   BLOCKED_STATUS=$(jq -r '.blocked_status // "Blocked"' "$CONFIG")
-  HUMAN_STATUS=$(jq -r '.human_attention_status // "Needs Human Attention"' "$CONFIG")
+  HUMAN_STATUS=$(jq -r '.human_attention_status // "Needs Attention"' "$CONFIG")
   # Prefix-agnostic: --plain list lines are "  <PREFIX>-<N> - <title>"; anchoring
   # start-of-line avoids false matches on id-shaped words inside titles.
   IN_PROGRESS=$(backlog task list --plain -s "In Progress" 2>/dev/null | grep -cE '^[[:space:]]*[A-Za-z]+-[0-9]+' || true)

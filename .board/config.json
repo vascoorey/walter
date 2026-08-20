@@ -4,7 +4,7 @@
   "human_gated_statuses": ["Done"],
   "triage_status": "Triage",
   "blocked_status": "Blocked",
-  "human_attention_status": "Needs Human Attention",
+  "human_attention_status": "Meatbag",
   "decisions_dir": "backlog/decisions",
   "dod_baseline": [
     "Verified end-to-end in a scratch repo (../automation-pal or throwaway)",

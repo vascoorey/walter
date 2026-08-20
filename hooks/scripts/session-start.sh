@@ -12,7 +12,7 @@ command -v jq >/dev/null 2>&1 || exit 0
 REVIEW_STATUS=$(jq -r '.review_status // "Review"' "$CONFIG")
 TRIAGE_STATUS=$(jq -r '.triage_status // "Triage"' "$CONFIG")
 BLOCKED_STATUS=$(jq -r '.blocked_status // "Blocked"' "$CONFIG")
-HUMAN_STATUS=$(jq -r '.human_attention_status // "Needs Human Attention"' "$CONFIG")
+HUMAN_STATUS=$(jq -r '.human_attention_status // "Needs Attention"' "$CONFIG")
 DECISIONS_DIR=$(jq -r '.decisions_dir // "backlog/decisions"' "$CONFIG")
 
 echo "## Board state (source of truth — keep it accurate in real time)"

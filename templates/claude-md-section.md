@@ -1,4 +1,4 @@
-<!-- board-discipline contract — appended by /onboard. Keep under 40 lines. -->
+<!-- walter contract — appended by /onboard. Keep under 40 lines. -->
 
 ## Board discipline (NON-NEGOTIABLE)
 
@@ -12,7 +12,7 @@ The Backlog.md board is the single source of truth for intent and state. Hooks e
 - Update status in real time — the moment reality changes, not batched at the end.
 - `In Progress` means actively executing. It never survives a stop.
 - Blocked on something external? Set `Blocked` and note the impediment on the task.
-- Ball in the human's court (question, decision, handoff)? Set `Needs Human Attention` and note what you need. When resuming one, move it back to In Progress before touching code.
+- Ball in the human's court (question, decision, handoff)? Set `Needs Attention` and note what you need. When resuming one, move it back to In Progress before touching code.
 - You may set at most `Review`. `Done` is human-only (hook-enforced).
 - Moving to Review requires: acceptance criteria checked off via the CLI + verification evidence in the task notes.
 

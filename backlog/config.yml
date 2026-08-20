@@ -1,6 +1,6 @@
-project_name: "board-discipline"
+project_name: "walter"
 default_status: "To Do"
-statuses: ["Triage", "To Do", "In Progress", "Blocked", "Needs Human Attention", "Review", "Done"]
+statuses: ["Triage", "To Do", "In Progress", "Blocked", "Meatbag", "Review", "Done"]
 labels: []
 date_format: yyyy-mm-dd
 max_column_width: 20
