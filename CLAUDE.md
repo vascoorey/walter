@@ -10,7 +10,6 @@ The Backlog.md board is the single source of truth for intent and state. Hooks e
 
 **State honesty**
 - Update status in real time — the moment reality changes, not batched at the end.
-- `In Progress` means actively executing. It never survives a stop.
 - Blocked on something external? Set `Blocked` and note the impediment on the task.
 - Ball in the human's court (question, decision, handoff)? Set `Needs Human Attention` and note what you need. When resuming one, move it back to In Progress before touching code.
 - You may set at most `Review`. `Done` is human-only (hook-enforced).
@@ -27,9 +26,11 @@ The Backlog.md board is the single source of truth for intent and state. Hooks e
 - Shared decisions are binding. Contradicting one requires a new decision doc, agreed with the human.
 
 **Verification** (Stop-gate runs this — you cannot finish while it's red)
-- Command: `{{TEST_COMMAND}}`
+- Command: `bash -n hooks/scripts/*.sh && jq -e . hooks/hooks.json .claude-plugin/plugin.json .claude-plugin/marketplace.json >/dev/null`
 - Definition of Done baseline (seeded as acceptance criteria on every task):
-{{DOD_BASELINE_ITEMS}}
+  - Verified end-to-end in a scratch repo (../automation-pal or throwaway)
+  - README updated if behavior changed
 
 **Ways of working for this repo**
-{{WORKING_STYLE_NOTES}}
+- Hooks stay fail-open: missing config, missing jq, missing backlog CLI must never break a session.
+- Verify CLI behavior against backlog.md 1.50.1 before shipping changes that touch it.

@@ -8,12 +8,25 @@ You are onboarding this repository onto a kanban-driven agentic workflow. The bo
 
 - Run `backlog --version`. If missing, tell the user to install it (`npm i -g backlog.md` or `brew install backlog-md`) and stop.
 - Run `jq --version`. If missing, tell the user (`brew install jq`) and stop.
-- Check whether `backlog/` and `.board/config.json` already exist. If both exist, say the repo is already onboarded, show the current config, and ask if they want to revise it instead.
+- Check whether `backlog/` and `.board/config.json` already exist. If both exist, the repo is already onboarded — do NOT re-initialize. Run the upgrade check below, then show the current config and ask if they want to revise anything else. Stop after that; skip Steps 2–7.
+
+### Upgrade check (already-onboarded repos)
+
+Older onboardings predate the parked-state columns. Bring the repo current:
+
+1. **Statuses** — read `backlog/config.yml`. If `Blocked` or `Needs Human Attention` is missing from `statuses`, add them between `In Progress` and `Review` (edit the one line; e.g. target `["Triage", "To Do", "In Progress", "Blocked", "Needs Human Attention", "Review", "Done"]`, preserving any repo-specific names already there). This is required — hooks tell agents to move tasks into these statuses, and the CLI rejects statuses not in this list.
+2. **Contract** — read the `## Board discipline` section of the repo's `CLAUDE.md`. If its State honesty block lacks the parked-state rules, update that section to match the current template (`${CLAUDE_PLUGIN_ROOT}/templates/claude-md-section.md`), preserving the repo's filled-in verification command, DoD baseline, and working-style notes.
+3. **`.board/config.json` needs no changes** — hooks default `blocked_status`/`human_attention_status` to the standard names. Only add these keys if the repo uses different column names.
+4. **Task prefix (optional, on request)** — offer to change `task_prefix`. Verified against backlog 1.50.1: changing the prefix orphans every existing task (invisible to list/edit; files remain) and new IDs restart at 1, so a bare config change on a non-empty board causes duplicate IDs. The full migration, in this exact order, with NO new tasks created in between: (a) set `task_prefix` in `backlog/config.yml`; (b) for every file in `backlog/tasks/` (and `backlog/archive/tasks/`, `backlog/completed/` if present): rewrite frontmatter `id: TASK-N` → `id: <NEWPREFIX>-N` and rename the file to **lowercase** `<newprefix>-N - <title>.md` — the scanner only finds lowercase-prefixed filenames; (c) verify with `backlog task list --plain` (all tasks visible, next created ID continues the sequence). The task-file guard rightly blocks agents from these writes: write the migration as a script OUTSIDE `backlog/` (e.g. `.board/migrate-prefix.sh`), show it, and have the human run it themselves (`! bash .board/migrate-prefix.sh`), then delete it.
+
+Confirm each change with the user before applying, then re-run the repo's verification command to show the gate is still green.
 
 ## Step 2 — Initialize the board
 
 - Run `backlog init "<repo name>" --agent-instructions none --check-branches false --include-remote false` (bare `backlog init` opens an interactive wizard that hangs in a tool call — always pass these flags; verified against backlog 1.50.1).
-- Configure statuses to include the workflow columns. Target status set (confirm with user in Step 3 before applying): `Triage`, `To Do`, `In Progress`, `Review`, `Done`. Edit `backlog/config.yml` statuses accordingly.
+- Configure statuses to include the workflow columns. Target status set (confirm with user in Step 3 before applying): `Triage`, `To Do`, `In Progress`, `Blocked`, `Needs Human Attention`, `Review`, `Done`. Edit `backlog/config.yml` statuses accordingly.
+- Column semantics (explain when confirming): `Blocked` = external impediment (dependency, failing upstream, missing access). `Needs Human Attention` = ball in the human's court (question, decision, handoff) — the agent's legal parked state at a stop. `In Progress` strictly means an agent is actively executing.
+- Set `task_prefix` in `backlog/config.yml` to the user's answer from Step 3 (confirm before applying). Do this BEFORE seeding any tasks — changing the prefix on a board with existing tasks requires the file-rename migration from the upgrade check.
 - Create `backlog/decisions/` if it doesn't exist.
 
 ## Step 3 — Interview: ways of working for THIS repo
@@ -25,6 +38,7 @@ Ask the user these questions (concisely, one message, numbered). Do not skip any
 3. **Definition of Done baseline** — beyond tests passing, what must always be true? (e.g. no new warnings, docs updated, changelog entry). These become default acceptance criteria seeded onto every task.
 4. **Streams of work** — what are the current parallel streams in this repo? (Used to create initial parent tasks/labels so the board reflects reality from day one.)
 5. **Working style** — anything about how work should be done here (spec-first, TDD, walking skeleton, commit conventions)? This goes in the CLAUDE.md contract as guidance, not enforcement.
+6. **Task prefix** — task IDs default to `task-N`. A per-repo code (e.g. `AP-N`, `BD-N`) makes cross-repo references unambiguous. Which prefix?
 
 ## Step 4 — Write the config
 
@@ -36,6 +50,8 @@ Create `.board/config.json`:
   "review_status": "Review",
   "human_gated_statuses": ["Done"],
   "triage_status": "Triage",
+  "blocked_status": "Blocked",
+  "human_attention_status": "Needs Human Attention",
   "decisions_dir": "backlog/decisions",
   "dod_baseline": ["<answer 3 items>"]
 }

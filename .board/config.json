@@ -1,0 +1,13 @@
+{
+  "test_command": "bash -n hooks/scripts/*.sh && jq -e . hooks/hooks.json .claude-plugin/plugin.json .claude-plugin/marketplace.json >/dev/null",
+  "review_status": "Review",
+  "human_gated_statuses": ["Done"],
+  "triage_status": "Triage",
+  "blocked_status": "Blocked",
+  "human_attention_status": "Needs Human Attention",
+  "decisions_dir": "backlog/decisions",
+  "dod_baseline": [
+    "Verified end-to-end in a scratch repo (../automation-pal or throwaway)",
+    "README updated if behavior changed"
+  ]
+}
