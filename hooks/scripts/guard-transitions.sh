@@ -36,7 +36,24 @@ fi
 board_cmd_touches_status "$CMD" || exit 0
 
 REVIEW_STATUS=$(jq -r '.review_status // "Review"' "$CONFIG")
+HUMAN_STATUS=$(jq -r '.human_attention_status // "Needs Attention"' "$CONFIG")
+PAIRING_STATUS=$(jq -r '.pairing_status // "Pairing"' "$CONFIG")
 GATED=$(jq -r '(.human_gated_statuses // ["Done"])[]' "$CONFIG")
+
+# The pairing column is human-only entry, checked separately from human_gated_statuses:
+# that list is the Review -> Done end gate, whose denial text ("move to Review instead")
+# would be wrong guidance here. Entry being human-only is what stops the agent parking
+# work in a column the stop-gate ignores.
+if [ -n "$PAIRING_STATUS" ] && board_cmd_sets_status "$CMD" "$PAIRING_STATUS"; then
+  {
+    echo "BLOCKED: '$PAIRING_STATUS' is a human-only column. You may not put a task there."
+    echo "It exists so a real back-and-forth with the human stays active across stops."
+    echo "You may RECOMMEND it: note on the task that the work has become multi-turn"
+    echo "collaboration, say so in your reply, then park the task ('$HUMAN_STATUS') and stop."
+    echo "The human moves it. Note via: $(board_mutate_hint)"
+  } >&2
+  exit 2
+fi
 
 while IFS= read -r STATUS; do
   [ -n "$STATUS" ] || continue

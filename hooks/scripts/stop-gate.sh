@@ -85,6 +85,10 @@ if [ "$STOP_ACTIVE" != "true" ] && command -v board_available >/dev/null 2>&1 &&
   REVIEW_STATUS=$(jq -r '.review_status // "Review"' "$CONFIG")
   BLOCKED_STATUS=$(jq -r '.blocked_status // "Blocked"' "$CONFIG")
   HUMAN_STATUS=$(jq -r '.human_attention_status // "Needs Attention"' "$CONFIG")
+  PAIRING_STATUS=$(jq -r '.pairing_status // "Pairing"' "$CONFIG")
+  # Only In Progress counts as dangling. The pairing column is active work the human
+  # explicitly sanctioned to survive a stop; counting it would recreate the tedium
+  # it exists to remove. Human-only entry is what keeps that from being a loophole.
   IN_PROGRESS=$(board_lines_in_status "In Progress" | grep -c . || true)
   if [ "${IN_PROGRESS:-0}" -gt 0 ]; then
     block "Land the plane before stopping. ${IN_PROGRESS} task(s) still In Progress — In Progress means actively executing, and you are stopping. For each one, exactly one of:
@@ -92,7 +96,8 @@ if [ "$STOP_ACTIVE" != "true" ] && command -v board_available >/dev/null 2>&1 &&
 2. Blocked on something external: note the impediment, move to '${BLOCKED_STATUS}'.
 3. Ball in the human's court (question, decision, handoff, mid-conversation pause): note what you need, move to '${HUMAN_STATUS}'. Move it back to In Progress when you resume.
 4. Unfinished remainder: create a follow-up task capturing the remaining work, note it, and move this one to '${REVIEW_STATUS}' or back to To Do.
-Pick the honest one — '${HUMAN_STATUS}' is always legal. Then stop."
+Pick the honest one — '${HUMAN_STATUS}' is always legal. Then stop.
+If this task has become a genuine back-and-forth with the human rather than execution, recommend '${PAIRING_STATUS}': note that on the task and say so in your reply, then take option 3. '${PAIRING_STATUS}' is human-only; you may not set it."
   fi
 fi
 

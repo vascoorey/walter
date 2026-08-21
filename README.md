@@ -7,6 +7,7 @@ Kanban-driven agent workflow for Claude Code. The board (Backlog.md) is the inva
 | Rule | Mechanism |
 |---|---|
 | `Done` is human-only; agent tops out at `Review` | **Hook** (PreToolUse denies the CLI transition) |
+| `Pairing` is human-only to enter; agent may recommend, never set | **Hook** (PreToolUse denies the CLI transition) |
 | Cannot stop with red tests | **Hook** (Stop-gate runs the repo's verification command) |
 | Cannot stop with tasks left dangling In Progress | **Hook** (Stop-gate "land the plane" check, first attempt — honest exits: Review, Blocked, Needs Attention, or a follow-up task) |
 | No direct edits to task files; CLI only | **Hook** (PreToolUse on Write/Edit + best-effort Bash catch) |
@@ -41,7 +42,7 @@ In any repo:
 
 ~10 minutes. It initializes the board, interviews you (verification command, human gates, DoD baseline, current streams, working style, task prefix), writes `.board/config.json`, appends a <40-line contract to `CLAUDE.md`, and seeds initial tasks. All per-repo variation lives in that config + board; the plugin never changes.
 
-Re-running `/onboard` on an already-onboarded repo runs an upgrade check instead: it adds any missing workflow columns (`Blocked`, `Needs Attention`) to `backlog/config.yml` and refreshes the CLAUDE.md contract section, confirming each change first. On request it also migrates the task prefix — a scripted rename the human runs themselves, since changing `task_prefix` on a non-empty board otherwise orphans every existing task (and the task-file guard rightly blocks agents from doing the rename).
+Re-running `/onboard` on an already-onboarded repo runs an upgrade check instead: it adds any missing workflow columns (`Pairing`, `Blocked`, `Needs Attention`) to `backlog/config.yml` and refreshes the CLAUDE.md contract section, confirming each change first. On request it also migrates the task prefix — a scripted rename the human runs themselves, since changing `task_prefix` on a non-empty board otherwise orphans every existing task (and the task-file guard rightly blocks agents from doing the rename).
 
 ## Board shape
 
@@ -51,10 +52,15 @@ Triage → To Do → In Progress → Review → Done
 agent    human    Blocked /     agent    HUMAN
 writes   promotes  Needs        ceiling  only
                    Attention
+
+                 Pairing    second active column, human-only entry,
+                            survives a stop, exits wherever
+                            In Progress can
 ```
 
 - **Triage** is the scope-containment valve: agents write discovered work there, never pull from it.
 - **In Progress** strictly means an agent is actively executing. Two parked states branch off it: **Blocked** (external impediment) and **Needs Attention** (ball in the human's court — the agent's honest exit at a stop, instead of fake-promoting to Review). Resuming a parked task means moving it back to In Progress first.
+- **Pairing** is the other active column, for work that is a genuine back-and-forth with you. It deliberately survives a stop and the agent keeps working it, code included, without the park-and-resume round-trip. Only *you* can put a task there; the agent can recommend it and cannot set it, which is what keeps a relaxed gate from becoming the cheapest exit. The agent moves it out on its own once the thread concludes.
 - **Review → Done** is your gate. Review evidence lives on the task (checked acceptance criteria + verification notes). Web board: `backlog browser`.
 
 ## Files

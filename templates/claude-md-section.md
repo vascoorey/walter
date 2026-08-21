@@ -5,12 +5,13 @@
 The Backlog.md board is the single source of truth for intent and state. Hooks enforce the hard rules; the rest is on you to follow exactly.
 
 **Focus**
-- ONE task In Progress at a time. Pull from To Do, set In Progress via the CLI *before* touching code.
+- ONE active task at a time, counting `In Progress` and `Pairing` together. Pull from To Do, set In Progress via the CLI *before* touching code.
 - Stay on the claimed task until it reaches Review. Do not expand its scope.
 
 **State honesty**
 - Update status in real time — the moment reality changes, not batched at the end.
 - `In Progress` means actively executing. It never survives a stop.
+- `Pairing` is the human-only column for work that is a real back-and-forth. A task there stays active across stops and you may keep working it, code included, without moving it to In Progress. You may not set it; recommend it by noting on the task that the work has become multi-turn collaboration and saying so. The human moves it. You may move one out once the thread concludes.
 - Blocked on something external? Set `Blocked` and note the impediment on the task.
 - Ball in the human's court (question, decision, handoff)? Set `Needs Attention` and note what you need. When resuming one, move it back to In Progress before touching code.
 - You may set at most `Review`. `Done` is human-only (hook-enforced).

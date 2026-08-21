@@ -1,13 +1,13 @@
 ---
 id: BD-14
 title: 'hooks: extract backlog touchpoints into a single lib'
-status: Review
+status: Done
 assignee: []
 created_date: '2026-08-20 12:01'
-updated_date: '2026-08-20 12:07'
+updated_date: '2026-08-20 12:11'
 labels: []
 dependencies: []
-ordinal: 5000
+ordinal: 0.9765625
 ---
 
 ## Description

@@ -17,6 +17,7 @@ REVIEW_STATUS=$(jq -r '.review_status // "Review"' "$CONFIG")
 TRIAGE_STATUS=$(jq -r '.triage_status // "Triage"' "$CONFIG")
 BLOCKED_STATUS=$(jq -r '.blocked_status // "Blocked"' "$CONFIG")
 HUMAN_STATUS=$(jq -r '.human_attention_status // "Needs Attention"' "$CONFIG")
+PAIRING_STATUS=$(jq -r '.pairing_status // "Pairing"' "$CONFIG")
 DECISIONS_DIR=$(jq -r '.decisions_dir // "backlog/decisions"' "$CONFIG")
 
 echo "## Board state (source of truth — keep it accurate in real time)"
@@ -25,18 +26,32 @@ echo ""
 board_summary || echo "(could not read board)"
 echo ""
 
-# Surface any task already claimed as In Progress in full detail.
+# Active work, in full detail. Two columns are active: In Progress (agent executing,
+# never survives a stop) and the pairing column (an open thread with the human that
+# deliberately does survive one — human-only entry, so the agent can't park work there).
 IN_PROGRESS=$(board_ids_in_status "In Progress")
+PAIRING=$(board_ids_in_status "$PAIRING_STATUS")
 if [ -n "$IN_PROGRESS" ]; then
   echo "### In Progress (your current focus — finish these before pulling new work)"
   for T in $IN_PROGRESS; do
     board_show "$T"
     echo "---"
   done
-else
-  echo "No task is In Progress. Pull ONE task from To Do, set it In Progress before touching code."
+  echo ""
 fi
-echo ""
+if [ -n "$PAIRING" ]; then
+  echo "### $PAIRING_STATUS (open thread with the human — active work that survives a stop)"
+  for T in $PAIRING; do
+    board_show "$T"
+    echo "---"
+  done
+  echo "Keep working these, code included, WITHOUT moving them to In Progress. Only the human puts a task here; you may move one out ('$REVIEW_STATUS', '$BLOCKED_STATUS', '$HUMAN_STATUS') once the thread concludes."
+  echo ""
+fi
+if [ -z "$IN_PROGRESS" ] && [ -z "$PAIRING" ]; then
+  echo "No task is active. Pull ONE task from To Do, set it In Progress before touching code."
+  echo ""
+fi
 
 # Parked tasks: the handoff round-trip. In Progress means actively executing;
 # these columns hold work that stopped honestly. Resuming one REQUIRES moving it back.
@@ -67,8 +82,9 @@ fi
 echo ""
 
 echo "### Board rules (enforced by hooks — violations will be blocked)"
-echo "- One task In Progress at a time. Status updates happen in real time, not batched."
+echo "- ONE active task at a time, counting In Progress and '$PAIRING_STATUS' together. Status updates happen in real time, not batched."
 echo "- In Progress means actively executing. Stopping? Land the plane: '$REVIEW_STATUS' with evidence, '$BLOCKED_STATUS' (external impediment), '$HUMAN_STATUS' (ball in the human's court), or a follow-up task."
+echo "- '$PAIRING_STATUS' is human-only. If a task is turning into multi-turn work with the human, recommend it (note it on the task and say so) — you may not set it yourself."
 echo "- '$REVIEW_STATUS' is the most you can set. 'Done' is human-only."
 echo "- Discovered work (bugs, refactors, missing deps): create a new task in '$TRIAGE_STATUS', link it, stay on your current task."
 echo "- Never edit task files directly. Use: $(board_mutate_hint)"
