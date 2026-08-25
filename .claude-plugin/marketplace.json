@@ -7,7 +7,8 @@
     {
       "name": "walter",
       "source": "./",
-      "description": "Kanban board discipline for agents: Backlog.md as source of truth, hooks for state honesty, /onboard for per-repo ways of working."
+      "description": "Kanban board discipline for agents: Backlog.md as source of truth, hooks for state honesty, /onboard for per-repo ways of working.",
+      "version": "0.2.0"
     }
   ]
 }

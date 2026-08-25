@@ -10,6 +10,7 @@
   "decisions_dir": "backlog/decisions",
   "dod_baseline": [
     "Verified end-to-end in a scratch repo (../automation-pal or throwaway)",
-    "README updated if behavior changed"
+    "README updated if behavior changed",
+    "plugin.json and marketplace.json versions bumped if the change is meaningful"
   ]
 }

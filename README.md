@@ -97,7 +97,7 @@ flaky one would block every stop in this repo rather than just failing a run. Wi
 in is tracked separately and needs its own judgement about what belongs on the hot path.
 Until then, run them by hand after touching a hook — nothing does it for you.
 
-## Known sharp edges (v0.1)
+## Known sharp edges (v0.2)
 
 - **macOS ships bash 3.2, and the hooks have to survive it.** `/bin/bash` is 3.2.57, where a bare `"${arr[@]}"` on an empty array under `set -u` aborts the command. Every empty-capable array expansion therefore uses the `${arr[@]+"${arr[@]}"}` form. This bit once already: the green-cache exclusions defeated their own cache on a stock Mac whenever the shared lib was unavailable, and passed every test because the suites all ran under homebrew bash 5. Anything added here should be exercised under `/bin/bash`, not just whichever bash is first on `PATH`.
 
@@ -109,4 +109,4 @@ Until then, run them by hand after touching a hook — nothing does it for you.
 - **Backlog.md CLI flags drift between versions.** Verified against 1.50.1: `backlog board --plain` doesn't exist (the script falls back to `backlog task list --plain`), and task IDs print uppercase (`TASK-1` — greps are case-insensitive for this). Smoke-test against your installed version.
 - **The injection caps the terminal column at 10 tasks** and states how many it omitted. Every other column renders in full. Raise `BOARD_TERMINAL_CAP` in `hooks/scripts/lib/board.sh` if you want more.
 - **Worktrees:** the board lives in-repo, so each worktree sees the branch's board state; merges of `backlog/tasks/*.md` are plain-markdown merges. Keep tasks small to avoid conflicts.
-- **Gating `To Do → In Progress`** is contract-only in v0.1. Hook-enforcing it needs claim-tracking state; add later if agents start grabbing unreadied work.
+- **Gating `To Do → In Progress`** is contract-only, deliberately. Set `"claim_gate": true` and SessionStart tells the agent to ask before claiming instead of to pull; nothing enforces it. Hook-enforcing it would need claim-tracking state, and the observed failure it would catch has not appeared. Note that a repo onboarded before this key existed stores the same policy as free text that no hook reads, which is what BD-34 repaired.

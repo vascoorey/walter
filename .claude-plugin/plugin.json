@@ -1,5 +1,5 @@
 {
   "name": "walter",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Kanban board discipline for agents: Backlog.md as source of truth, hooks for state honesty, /onboard for per-repo ways of working."
 }
