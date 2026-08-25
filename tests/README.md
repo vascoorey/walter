@@ -22,6 +22,7 @@ somewhere you can inspect afterwards.
 | `bd31-e2e.sh` | green cache, `dod_baseline`, dependency marking, terminal cap, claim gate |
 | `bd32-e2e.sh` | `parent.sh` never truncates a task file and never reports a false success |
 | `bd33-e2e.sh` | every hook entry point survives macOS system bash 3.2 |
+| `bd40-e2e.sh` | the contract drift report never emits a verdict and always names what it skipped |
 | `pairing-e2e.sh` | `Pairing` is human-only to enter and survives a stop |
 | `cpprobe.sh` | the write guard's source-versus-destination rule (called by `bd31`) |
 

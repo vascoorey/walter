@@ -46,7 +46,9 @@ In any repo:
 
 ~10 minutes. It initializes the board, interviews you (verification command, human gates, DoD baseline, current streams, working style, task prefix), writes `.board/config.json`, appends a <40-line contract to `CLAUDE.md`, and seeds initial tasks. All per-repo variation lives in that config + board; the plugin never changes.
 
-Re-running `/onboard` on an already-onboarded repo runs an upgrade check instead: it adds any missing workflow columns (`Pairing`, `Blocked`, `Needs Attention`) to `backlog/config.yml` and refreshes the CLAUDE.md contract section, confirming each change first. **That check is narrower than it looks, and it reports success either way.** It refreshes the contract only when the State honesty block is missing a parked-state rule, and it adds config keys only for parked-status names — so a repo whose contract has merely fallen behind, or whose config lacks a newer key like `claim_gate`, is examined and pronounced current. This is not hypothetical: it happened to two repos, which were told they needed no changes while carrying exactly that drift. There is no version marker and no staleness warning, so nothing tells an onboarded repo it has fallen behind. Treat re-onboarding as a column migration, not as a way to catch up. Until you do, the hooks adapt: they read the board's real status list and only ever name columns it actually has, so a repo still on the v0.1 five-column board gets land-the-plane options it can act on rather than exits the CLI would reject. If that list can't be read, every mention is kept. On request it also migrates the task prefix — a scripted rename the human runs themselves, since changing `task_prefix` on a non-empty board otherwise orphans every existing task (and the task-file guard rightly blocks agents from doing the rename).
+Re-running `/onboard` on an already-onboarded repo runs an upgrade check instead: it adds any missing workflow columns (`Pairing`, `Blocked`, `Needs Attention`) to `backlog/config.yml` and reconciles the CLAUDE.md contract section, confirming each change first. **The contract half of that check used to report success either way, and no longer does.** It once refreshed the contract only when the State honesty block was missing a parked-state rule, so a repo whose *other* blocks had fallen behind was examined and pronounced current. That is not hypothetical: it happened to all three onboarded repos, every one of which was still carrying pre-commitment-model `Focus` wording while the hooks enforced the new rules, which meant agents were denied for creating subtasks their contract never mentioned. The check now runs `scripts/contract-drift.sh`, which compares every block, prints what is missing beside what is repo-specific, and always ends by naming what it could not judge — reworded-versus-dropped bullets, prose outside the blocks, and the config files it does not read. It never emits a "current" verdict, and it repairs nothing on its own: live repos carry real adaptations, and no diff can tell those from stale wording, so the human decides line by line.
+
+**The config half is still narrow.** Step 3 adds keys only for parked-status names, so a repo lacking a newer key like `claim_gate` is still examined and passed over. There is deliberately no version marker and no staleness warning: an automatic drift detector was designed and rejected, because a check an agent can satisfy by rewriting the policy is not a check (`backlog/decisions/2026-08-25-what-the-dogfood-review-refuted.md`). Treat re-onboarding as a column migration plus a contract review, not as a way to catch up. Until you do, the hooks adapt: they read the board's real status list and only ever name columns it actually has, so a repo still on the v0.1 five-column board gets land-the-plane options it can act on rather than exits the CLI would reject. If that list can't be read, every mention is kept. On request it also migrates the task prefix — a scripted rename the human runs themselves, since changing `task_prefix` on a non-empty board otherwise orphans every existing task (and the task-file guard rightly blocks agents from doing the rename).
 
 ## Board shape
 
@@ -80,6 +82,7 @@ hooks/scripts/guard-transitions.sh  denies human-gated transitions + bash writes
 hooks/scripts/guard-task-files.sh   CLI-only mutations; blocks rogue plan files (Write/Edit)
 hooks/scripts/stop-gate.sh        red tests / dangling tasks block completion
 scripts/parent.sh                 human-run: bundle existing tasks under a parent
+scripts/contract-drift.sh         report how an installed contract differs from the template
 templates/claude-md-section.md    per-repo contract template
 tests/                            behavioural suites for the hooks (see tests/README.md)
 tools/                            dogfood-review workflows + transcript extraction
@@ -87,9 +90,9 @@ tools/                            dogfood-review workflows + transcript extracti
 
 ## Tests
 
-`tests/` holds 212 assertions across seven suites covering the human-only columns, the
+`tests/` holds 242 assertions across eight suites covering the human-only columns, the
 land-the-plane exits, column-aware rendering, the green cache, `parent.sh`'s failure
-path, and bash 3.2 portability. `bash tests/bd33-e2e.sh`, or loop over `tests/*-e2e.sh`.
+path, contract drift reporting, and bash 3.2 portability. `bash tests/bd33-e2e.sh`, or loop over `tests/*-e2e.sh`.
 
 **They are not wired into the verification gate.** That gate is still a syntax check.
 These suites create git repos, write to `/tmp` and shell out to the `backlog` CLI, so a
@@ -97,7 +100,7 @@ flaky one would block every stop in this repo rather than just failing a run. Wi
 in is tracked separately and needs its own judgement about what belongs on the hot path.
 Until then, run them by hand after touching a hook — nothing does it for you.
 
-## Known sharp edges (v0.2)
+## Known sharp edges (v0.3)
 
 - **macOS ships bash 3.2, and the hooks have to survive it.** `/bin/bash` is 3.2.57, where a bare `"${arr[@]}"` on an empty array under `set -u` aborts the command. Every empty-capable array expansion therefore uses the `${arr[@]+"${arr[@]}"}` form. This bit once already: the green-cache exclusions defeated their own cache on a stock Mac whenever the shared lib was unavailable, and passed every test because the suites all ran under homebrew bash 5. Anything added here should be exercised under `/bin/bash`, not just whichever bash is first on `PATH`.
 
