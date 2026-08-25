@@ -5,8 +5,10 @@
 The Backlog.md board is the single source of truth for intent and state. Hooks enforce the hard rules; the rest is on you to follow exactly.
 
 **Focus**
-- ONE active task at a time, counting `In Progress` and `Pairing` together. Pull from To Do, set In Progress via the CLI *before* touching code.
-- Stay on the claimed task until it reaches Review. Do not expand its scope.
+- ONE active commitment at a time, counting `In Progress` and `Pairing` together. A commitment is a single task, or a parent task together with its subtasks. Verification happens once, on the parent, covering the batch.
+- Batches are human-defined. You may not create a subtask (hook-enforced). Propose a bundle and hand over the `parent.sh` command for the human to run; the guard denial prints its full path.
+- A parent's subtasks are work you have already claimed. Never pull one separately.
+- Pull from To Do, set In Progress via the CLI *before* touching code. Stay on the claimed commitment until it reaches Review. Do not expand its scope.
 
 **State honesty**
 - Update status in real time — the moment reality changes, not batched at the end.
@@ -28,7 +30,7 @@ The Backlog.md board is the single source of truth for intent and state. Hooks e
 - Shared decisions are binding. Contradicting one requires a new decision doc, agreed with the human.
 
 **Verification** (Stop-gate runs this — you cannot finish while it's red)
-- Command: `bash -n hooks/scripts/*.sh hooks/scripts/lib/*.sh && jq -e . hooks/hooks.json .claude-plugin/plugin.json .claude-plugin/marketplace.json >/dev/null`
+- Command: `bash -n hooks/scripts/*.sh hooks/scripts/lib/*.sh scripts/*.sh && jq -e . hooks/hooks.json .claude-plugin/plugin.json .claude-plugin/marketplace.json >/dev/null`
 - Definition of Done baseline (seeded as acceptance criteria on every task):
   - Verified end-to-end in a scratch repo (../automation-pal or throwaway)
   - README updated if behavior changed

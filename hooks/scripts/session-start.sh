@@ -20,6 +20,31 @@ HUMAN_STATUS=$(jq -r '.human_attention_status // "Needs Attention"' "$CONFIG")
 PAIRING_STATUS=$(jq -r '.pairing_status // "Pairing"' "$CONFIG")
 DECISIONS_DIR=$(jq -r '.decisions_dir // "backlog/decisions"' "$CONFIG")
 
+# Advertise only columns this board actually has (BD-19). A repo onboarded before a
+# column shipped would otherwise be told to use exits the CLI rejects.
+HAS_PAIRING=false; board_has_status "$PAIRING_STATUS" && HAS_PAIRING=true
+HAS_BLOCKED=false; board_has_status "$BLOCKED_STATUS" && HAS_BLOCKED=true
+HAS_HUMAN=false;   board_has_status "$HUMAN_STATUS"   && HAS_HUMAN=true
+
+EXITS="'$REVIEW_STATUS'"
+$HAS_BLOCKED && EXITS="$EXITS, '$BLOCKED_STATUS'"
+$HAS_HUMAN && EXITS="$EXITS, '$HUMAN_STATUS'"
+
+LAND="'$REVIEW_STATUS' with evidence"
+$HAS_BLOCKED && LAND="$LAND, '$BLOCKED_STATUS' (external impediment)"
+$HAS_HUMAN && LAND="$LAND, '$HUMAN_STATUS' (ball in the human's court)"
+LAND="$LAND, or a follow-up task"
+
+# BD-25: `task list` renders subtasks FLAT, so a parent's subtasks show up as
+# ordinary To Do lines and read as pullable work. They are not — they are the
+# commitment already claimed. Only emitted when the active task really has some.
+commitment_note() {
+  local T SUBS=""
+  for T in $1; do SUBS="$SUBS$(board_subtask_ids "$T")"; done
+  [ -n "$SUBS" ] || return 0
+  echo "Subtasks listed above are part of this commitment, not new work. Do not claim them separately; verification happens once, on the parent, covering the batch."
+}
+
 echo "## Board state (source of truth — keep it accurate in real time)"
 echo ""
 
@@ -37,6 +62,7 @@ if [ -n "$IN_PROGRESS" ]; then
     board_show "$T"
     echo "---"
   done
+  commitment_note "$IN_PROGRESS"
   echo ""
 fi
 if [ -n "$PAIRING" ]; then
@@ -45,7 +71,8 @@ if [ -n "$PAIRING" ]; then
     board_show "$T"
     echo "---"
   done
-  echo "Keep working these, code included, WITHOUT moving them to In Progress. Only the human puts a task here; you may move one out ('$REVIEW_STATUS', '$BLOCKED_STATUS', '$HUMAN_STATUS') once the thread concludes."
+  commitment_note "$PAIRING"
+  echo "Keep working these, code included, WITHOUT moving them to In Progress. Only the human puts a task here; you may move one out ($EXITS) once the thread concludes."
   echo ""
 fi
 if [ -z "$IN_PROGRESS" ] && [ -z "$PAIRING" ]; then
@@ -82,9 +109,13 @@ fi
 echo ""
 
 echo "### Board rules (enforced by hooks — violations will be blocked)"
-echo "- ONE active task at a time, counting In Progress and '$PAIRING_STATUS' together. Status updates happen in real time, not batched."
-echo "- In Progress means actively executing. Stopping? Land the plane: '$REVIEW_STATUS' with evidence, '$BLOCKED_STATUS' (external impediment), '$HUMAN_STATUS' (ball in the human's court), or a follow-up task."
-echo "- '$PAIRING_STATUS' is human-only. If a task is turning into multi-turn work with the human, recommend it (note it on the task and say so) — you may not set it yourself."
+if $HAS_PAIRING; then
+  echo "- ONE active task at a time, counting In Progress and '$PAIRING_STATUS' together. Status updates happen in real time, not batched."
+else
+  echo "- ONE active task at a time. Status updates happen in real time, not batched."
+fi
+echo "- In Progress means actively executing. Stopping? Land the plane: $LAND."
+$HAS_PAIRING && echo "- '$PAIRING_STATUS' is human-only. If a task is turning into multi-turn work with the human, recommend it (note it on the task and say so) — you may not set it yourself."
 echo "- '$REVIEW_STATUS' is the most you can set. 'Done' is human-only."
 echo "- Discovered work (bugs, refactors, missing deps): create a new task in '$TRIAGE_STATUS', link it, stay on your current task."
 echo "- Never edit task files directly. Use: $(board_mutate_hint)"

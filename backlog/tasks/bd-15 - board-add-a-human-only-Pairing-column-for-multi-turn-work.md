@@ -1,13 +1,13 @@
 ---
 id: BD-15
 title: 'board: add a human-only ''Pairing'' column for multi-turn work'
-status: Review
+status: Done
 assignee: []
 created_date: '2026-08-21 10:21'
-updated_date: '2026-08-21 10:26'
+updated_date: '2026-08-23 01:54'
 labels: []
 dependencies: []
-ordinal: 5000
+ordinal: 0.48828125
 ---
 
 ## Description

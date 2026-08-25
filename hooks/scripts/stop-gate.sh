@@ -91,13 +91,31 @@ if [ "$STOP_ACTIVE" != "true" ] && command -v board_available >/dev/null 2>&1 &&
   # it exists to remove. Human-only entry is what keeps that from being a loophole.
   IN_PROGRESS=$(board_lines_in_status "In Progress" | grep -c . || true)
   if [ "${IN_PROGRESS:-0}" -gt 0 ]; then
+    # Offer only exits this board actually has (BD-19). Options are referenced by
+    # name, never by number, so a missing column can't leave a dangling "option 3".
+    OPTS=""; N=0
+    add_opt() { N=$((N + 1)); OPTS="${OPTS}${N}. $1"$'\n'; }
+    add_opt "Finished: check off acceptance criteria via the CLI, add verification evidence to notes, move to '${REVIEW_STATUS}'."
+    board_has_status "$BLOCKED_STATUS" &&
+      add_opt "Blocked on something external: note the impediment, move to '${BLOCKED_STATUS}'."
+    HAS_HUMAN=false
+    if board_has_status "$HUMAN_STATUS"; then
+      HAS_HUMAN=true
+      add_opt "Ball in the human's court (question, decision, handoff, mid-conversation pause): note what you need, move to '${HUMAN_STATUS}'. Move it back to In Progress when you resume."
+    fi
+    add_opt "Unfinished remainder: create a follow-up task capturing the remaining work, note it, and move this one to '${REVIEW_STATUS}' or back to To Do."
+
+    CLOSER="Pick the honest one. Then stop."
+    $HAS_HUMAN && CLOSER="Pick the honest one — '${HUMAN_STATUS}' is always legal. Then stop."
+    if board_has_status "$PAIRING_STATUS"; then
+      PARK="pick one of the options above"
+      $HAS_HUMAN && PARK="park it in '${HUMAN_STATUS}'"
+      CLOSER="${CLOSER}
+If this task has become a genuine back-and-forth with the human rather than execution, recommend '${PAIRING_STATUS}': note that on the task and say so in your reply, then ${PARK} and stop. '${PAIRING_STATUS}' is human-only; you may not set it."
+    fi
+
     block "Land the plane before stopping. ${IN_PROGRESS} task(s) still In Progress — In Progress means actively executing, and you are stopping. For each one, exactly one of:
-1. Finished: check off acceptance criteria via the CLI, add verification evidence to notes, move to '${REVIEW_STATUS}'.
-2. Blocked on something external: note the impediment, move to '${BLOCKED_STATUS}'.
-3. Ball in the human's court (question, decision, handoff, mid-conversation pause): note what you need, move to '${HUMAN_STATUS}'. Move it back to In Progress when you resume.
-4. Unfinished remainder: create a follow-up task capturing the remaining work, note it, and move this one to '${REVIEW_STATUS}' or back to To Do.
-Pick the honest one — '${HUMAN_STATUS}' is always legal. Then stop.
-If this task has become a genuine back-and-forth with the human rather than execution, recommend '${PAIRING_STATUS}': note that on the task and say so in your reply, then take option 3. '${PAIRING_STATUS}' is human-only; you may not set it."
+${OPTS}${CLOSER}"
   fi
 fi
 

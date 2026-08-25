@@ -1,7 +1,9 @@
 {
-  "test_command": "bash -n hooks/scripts/*.sh hooks/scripts/lib/*.sh && jq -e . hooks/hooks.json .claude-plugin/plugin.json .claude-plugin/marketplace.json >/dev/null",
+  "test_command": "bash -n hooks/scripts/*.sh hooks/scripts/lib/*.sh scripts/*.sh && jq -e . hooks/hooks.json .claude-plugin/plugin.json .claude-plugin/marketplace.json >/dev/null",
   "review_status": "Review",
-  "human_gated_statuses": ["Done"],
+  "human_gated_statuses": [
+    "Done"
+  ],
   "triage_status": "Triage",
   "blocked_status": "Blocked",
   "human_attention_status": "Meatbag",

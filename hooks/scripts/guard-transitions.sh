@@ -32,6 +32,27 @@ if printf '%s' "$CMD" | grep -qiE "(>>?|\btee\b)[[:space:]]*[\"']?([^\"'|;& ]*/)
   exit 2
 fi
 
+# Subtasks are human-defined (BD-25). Blanket denial rather than "only under your
+# own active parent": that check would need a board query on the hot path, and the
+# Pairing precedent says a relaxation the agent can reach for becomes the cheapest
+# legal exit. Creating a subtask under an unrelated parent is no loss — the triage
+# protocol already routes discovered work to a top-level task.
+if board_cmd_creates_subtask "$CMD"; then
+  TRIAGE_STATUS=$(jq -r '.triage_status // "Triage"' "$CONFIG")
+  PARENT_SH=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." 2>/dev/null && pwd)/scripts/parent.sh
+  {
+    echo "BLOCKED: subtasks are human-defined. You may not create one."
+    echo "The unit of focus is ONE commitment: a single task, or a parent WITH its"
+    echo "subtasks. A batch you can extend yourself is a batch you can grow without"
+    echo "ever breaking that rule — which is what the triage protocol exists to stop."
+    echo "Discovered work goes to '$TRIAGE_STATUS' as a top-level task: $(board_create_hint)"
+    echo "To bundle existing tasks, PROPOSE the batch and hand over this command"
+    echo "for the human to run (it keeps every id, filename and field intact):"
+    echo "  bash $PARENT_SH <parent-id-or-title> <id> <id> ..."
+  } >&2
+  exit 2
+fi
+
 # Only care about board-tool invocations that set a status.
 board_cmd_touches_status "$CMD" || exit 0
 
