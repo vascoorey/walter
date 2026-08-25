@@ -48,11 +48,20 @@ block() {
 # non-file state (env, services, flaky tests) won't retrigger until content changes.
 content_hash() {
   git rev-parse --is-inside-work-tree >/dev/null 2>&1 || return 1
+  # Pure board state is excluded (BD-20): task files are tracked, so writing a note
+  # invalidated the cache and the next stop paid a full verification run. Measured
+  # at ~2.7s per board-only turn against a ~400ms cache hit. Board ceremony paying
+  # test latency is exactly backwards. Falls back to no exclusions if the lib is
+  # missing, which costs cache hits rather than correctness.
+  local EXCLUDES=()
+  if command -v board_hash_exclude_pathspec >/dev/null 2>&1; then
+    while IFS= read -r SPEC; do [ -n "$SPEC" ] && EXCLUDES+=("$SPEC"); done < <(board_hash_exclude_pathspec)
+  fi
   {
     printf '%s\n' "$TEST_CMD"
     git rev-parse HEAD 2>/dev/null
-    git diff HEAD 2>/dev/null
-    git ls-files --others --exclude-standard 2>/dev/null | while IFS= read -r F; do
+    git diff HEAD -- . "${EXCLUDES[@]}" 2>/dev/null
+    git ls-files --others --exclude-standard -- . "${EXCLUDES[@]}" 2>/dev/null | while IFS= read -r F; do
       [ -f "$F" ] && shasum "$F" 2>/dev/null
     done
   } | shasum | cut -d' ' -f1

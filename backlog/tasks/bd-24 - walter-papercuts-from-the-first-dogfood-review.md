@@ -4,11 +4,11 @@ title: walter papercuts from the first dogfood review
 status: To Do
 assignee: []
 created_date: '2026-08-23 02:18'
-updated_date: '2026-08-25 05:50'
+updated_date: '2026-08-25 07:15'
 labels: []
 dependencies: []
-ordinal: 13000
 parent_task_id: BD-31
+ordinal: 13000
 ---
 
 ## Description
@@ -31,19 +31,33 @@ Found by BD-16 (dogfood review).
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Migration script ships executable
-- [ ] #2 Task-file denial names the human handoff route
-- [ ] #3 Footer and repo claim-gate config no longer contradict
-- [ ] #4 Terminal-column rendering is capped
-- [ ] #5 Block-counter reset semantics confirmed or changed deliberately
-- [ ] #6 Verified end-to-end in a scratch repo (../automation-pal or throwaway)
-- [ ] #7 README updated if behavior changed
+- [x] #1 Migration script ships executable
+- [x] #2 Task-file denial names the human handoff route
+- [x] #3 Footer and repo claim-gate config no longer contradict
+- [x] #4 Terminal-column rendering is capped
+- [x] #5 Block-counter reset semantics confirmed or changed deliberately
+- [x] #6 Verified end-to-end in a scratch repo (../automation-pal or throwaway)
+- [x] #7 README updated if behavior changed
 <!-- AC:END -->
 
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
-UPDATE 2026-08-25: item 7 above is now NARROWED, not open. The subtask denial originally checked the create subcommand and the parent flag as two independent matches across the whole command, so any unrelated short flag of that letter anywhere in the command was enough. A directory-making command beside a plain task creation tripped it. It now requires both in the same command segment, one regex rather than two, and four assertions in the BD-25 suite cover that regression. What remains is the narrow residual shared with every other guard here: one segment carrying both a creation and an unrelated flag of that letter.
+DONE 2026-08-25 under BD-31. All seven items closed.
 
-Items 1 through 6 and the earlier quoted-prose note are unchanged and still open. The quoted-prose one fired twice more while landing BD-25, once on a note describing the guards and once on a documentation edit that merely quoted the denied example. It is the highest-frequency papercut on this list by a wide margin.
+1. onboard.md now tells the interviewer to make the migration script executable, and says why: it has already cost a human three failed attempts.
+
+2. Both task-file denials, the Write/Edit one and the shell-side one, now name the sanctioned route: write the script outside the board directory, make it executable, hand it to the human to run with the bang prefix. The agent no longer has to invent that recovery.
+
+3. The footer contradiction is gone, and this needed more than wording. There was NO claim-gate key at all: onboard told the interviewer to add a handling note and named no key, and no hook read one. Added claim_gate as a real boolean in the config, written by onboard from the interview answer and read by session-start, which now either tells the agent to pull work or tells it to ask, never both. onboard also records why the gated status list is the wrong home for this: putting the active status there fires a denial whose text tells the agent to move to Review instead, which is nonsense here, and it would stop the agent claiming anything at all.
+
+4. The terminal column caps at 10 and states how many it omitted. Silent truncation would have been its own lie. Every other column renders in full. The cap is a named constant in the lib.
+
+5. Block-counter reset CONFIRMED, not changed. Per-stop reset is correct: the cap exists to break a single stuck stop, and a session-long counter would disarm the gate for legitimate later work. The five-blocks-in-one-session observation is the design working, not failing. Documented in the README sharp edges so it reads as intended rather than broken.
+
+6. Fixed. For a copy or move only the DESTINATION is a write, and the destination is the last token of the segment, so reading files out of the board directory is allowed while writing into it stays blocked. Verified by a 13-case probe covering both directions plus redirect, tee, in-place edit and remove. Known residual, now documented: a copy into the directory with a trailing redirect puts a non-path token last and slips through.
+
+7. Confirmed accurate and closed. The narrowing landed while shipping BD-25 and is covered by four assertions there.
+
+Verification: 12 assertions in bd31-e2e for items 1 through 4 and 6, plus the 13-case probe, plus the four BD-25 assertions for item 7. Item 5 changed no code.
 <!-- SECTION:NOTES:END -->

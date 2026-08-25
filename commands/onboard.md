@@ -17,7 +17,7 @@ Older onboardings predate the parked-state columns. Bring the repo current:
 1. **Statuses** — read `backlog/config.yml`. If `Pairing`, `Blocked`, or `Needs Attention` is missing from `statuses`, add them between `In Progress` and `Review` (edit the one line; e.g. target `["Triage", "To Do", "In Progress", "Pairing", "Blocked", "Needs Attention", "Review", "Done"]`, preserving any repo-specific names already there). This is required — hooks tell agents to move tasks into these statuses, and the CLI rejects statuses not in this list. `Pairing` is the exception the agent can only be moved *into* by you; explain that when confirming.
 2. **Contract** — read the `## Board discipline` section of the repo's `CLAUDE.md`. If its State honesty block lacks the parked-state rules, update that section to match the current template (`${CLAUDE_PLUGIN_ROOT}/templates/claude-md-section.md`), preserving the repo's filled-in verification command, DoD baseline, and working-style notes.
 3. **`.board/config.json`** — hooks default `blocked_status`/`human_attention_status`/`pairing_status` to the standard names (`Blocked`, `Needs Attention`, `Pairing`). Add these keys only if the repo's columns are named differently — including boards onboarded when the default was `Needs Human Attention`: for those, either set `"human_attention_status": "Needs Human Attention"` (one line, keeps everything working) or rename the column (add the new status to `config.yml`, move any parked tasks via the CLI, remove the old status).
-4. **Task prefix (optional, on request)** — offer to change `task_prefix`. Verified against backlog 1.50.1: changing the prefix orphans every existing task (invisible to list/edit; files remain) and new IDs restart at 1, so a bare config change on a non-empty board causes duplicate IDs. The full migration, in this exact order, with NO new tasks created in between: (a) set `task_prefix` in `backlog/config.yml`; (b) for every file in `backlog/tasks/` (and `backlog/archive/tasks/`, `backlog/completed/` if present): rewrite frontmatter `id: TASK-N` → `id: <NEWPREFIX>-N` and rename the file to **lowercase** `<newprefix>-N - <title>.md` — the scanner only finds lowercase-prefixed filenames; (c) verify with `backlog task list --plain` (all tasks visible, next created ID continues the sequence). The task-file guard rightly blocks agents from these writes: write the migration as a script OUTSIDE `backlog/` (e.g. `.board/migrate-prefix.sh`), show it, and have the human run it themselves (`! bash .board/migrate-prefix.sh`), then delete it.
+4. **Task prefix (optional, on request)** — offer to change `task_prefix`. Verified against backlog 1.50.1: changing the prefix orphans every existing task (invisible to list/edit; files remain) and new IDs restart at 1, so a bare config change on a non-empty board causes duplicate IDs. The full migration, in this exact order, with NO new tasks created in between: (a) set `task_prefix` in `backlog/config.yml`; (b) for every file in `backlog/tasks/` (and `backlog/archive/tasks/`, `backlog/completed/` if present): rewrite frontmatter `id: TASK-N` → `id: <NEWPREFIX>-N` and rename the file to **lowercase** `<newprefix>-N - <title>.md` — the scanner only finds lowercase-prefixed filenames; (c) verify with `backlog task list --plain` (all tasks visible, next created ID continues the sequence). The task-file guard rightly blocks agents from these writes: write the migration as a script OUTSIDE `backlog/` (e.g. `.board/migrate-prefix.sh`), **`chmod +x` it**, show it, and have the human run it themselves (`! bash .board/migrate-prefix.sh`), then delete it. Do not skip the executable bit: it has already cost a human three failed attempts.
 
 Confirm each change with the user before applying, then re-run the repo's verification command to show the gate is still green.
 
@@ -49,6 +49,7 @@ Create `.board/config.json`:
   "test_command": "<answer 1>",
   "review_status": "Review",
   "human_gated_statuses": ["Done"],
+  "claim_gate": false,
   "triage_status": "Triage",
   "blocked_status": "Blocked",
   "human_attention_status": "Needs Attention",
@@ -58,7 +59,7 @@ Create `.board/config.json`:
 }
 ```
 
-If the user gated `To Do → In Progress` in answer 2, add `"In Progress"` handling note: agents must ask before claiming (this is contract-level, not hook-enforced yet — say so honestly).
+If the user gated `To Do → In Progress` in answer 2, set `"claim_gate": true`. SessionStart reads it and tells the agent to ask before claiming instead of telling it to pull from To Do. This is contract-level, not hook-enforced — say so honestly. Do **not** put `In Progress` in `human_gated_statuses`: that list drives a PreToolUse denial whose message ("move to Review instead") would be wrong here, and it would stop the agent claiming any task at all.
 
 ## Step 5 — Write the CLAUDE.md contract
 

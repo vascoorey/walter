@@ -22,6 +22,9 @@ if board_path_is_task_file "$FILE"; then
   {
     echo "BLOCKED: never edit task files directly — metadata integrity depends on the CLI."
     echo "Use: $(board_mutate_hint)"
+    echo "If this genuinely cannot go through the CLI — the task-prefix migration is the"
+    echo "only known case — write the script OUTSIDE backlog/ (e.g. .board/migrate.sh),"
+    echo "chmod +x it, and hand it to the human to run themselves with the ! prefix."
   } >&2
   exit 2
 fi

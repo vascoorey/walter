@@ -19,6 +19,13 @@ BLOCKED_STATUS=$(jq -r '.blocked_status // "Blocked"' "$CONFIG")
 HUMAN_STATUS=$(jq -r '.human_attention_status // "Needs Attention"' "$CONFIG")
 PAIRING_STATUS=$(jq -r '.pairing_status // "Pairing"' "$CONFIG")
 DECISIONS_DIR=$(jq -r '.decisions_dir // "backlog/decisions"' "$CONFIG")
+# BD-24 item 3: onboarding could declare that claiming is gated, but nothing read it,
+# so the footer told the agent to pull work while the repo's own config said to ask.
+CLAIM_GATE=$(jq -r 'if .claim_gate == true then "true" else "false" end' "$CONFIG")
+# BD-21: dod_baseline was declared in config and read by no hook. Surfaced rather
+# than enforced — a creation gate could only check that criteria exist, and would
+# train one throwaway criterion per task.
+DOD_BASELINE=$(jq -r '(.dod_baseline // [])[]' "$CONFIG" 2>/dev/null)
 
 # Advertise only columns this board actually has (BD-19). A repo onboarded before a
 # column shipped would otherwise be told to use exits the CLI rejects.
@@ -76,7 +83,11 @@ if [ -n "$PAIRING" ]; then
   echo ""
 fi
 if [ -z "$IN_PROGRESS" ] && [ -z "$PAIRING" ]; then
-  echo "No task is active. Pull ONE task from To Do, set it In Progress before touching code."
+  if [ "$CLAIM_GATE" = "true" ]; then
+    echo "No task is active. This repo gates claiming: ASK before setting anything In Progress, and wait for the answer. Do not pull from To Do on your own."
+  else
+    echo "No task is active. Pull ONE task from To Do, set it In Progress before touching code."
+  fi
   echo ""
 fi
 
@@ -110,13 +121,20 @@ echo ""
 
 echo "### Board rules (enforced by hooks — violations will be blocked)"
 if $HAS_PAIRING; then
-  echo "- ONE active task at a time, counting In Progress and '$PAIRING_STATUS' together. Status updates happen in real time, not batched."
+  echo "- ONE active commitment at a time, counting In Progress and '$PAIRING_STATUS' together. A commitment is one task, or a parent task with its subtasks. Status updates happen in real time, not batched."
 else
-  echo "- ONE active task at a time. Status updates happen in real time, not batched."
+  echo "- ONE active commitment at a time: one task, or a parent task with its subtasks. Status updates happen in real time, not batched."
+fi
+if [ "$CLAIM_GATE" = "true" ]; then
+  echo "- Claiming is gated in this repo: ASK before moving anything to In Progress. This is contract-level, not hook-enforced."
 fi
 echo "- In Progress means actively executing. Stopping? Land the plane: $LAND."
 $HAS_PAIRING && echo "- '$PAIRING_STATUS' is human-only. If a task is turning into multi-turn work with the human, recommend it (note it on the task and say so) — you may not set it yourself."
 echo "- '$REVIEW_STATUS' is the most you can set. 'Done' is human-only."
 echo "- Discovered work (bugs, refactors, missing deps): create a new task in '$TRIAGE_STATUS', link it, stay on your current task."
+if [ -n "$DOD_BASELINE" ]; then
+  echo "- Every task you create carries this repo's Definition of Done baseline as acceptance criteria. Pass them with --ac at creation:"
+  printf '%s\n' "$DOD_BASELINE" | sed 's/^/    - /'
+fi
 echo "- Never edit task files directly. Use: $(board_mutate_hint)"
 exit 0
