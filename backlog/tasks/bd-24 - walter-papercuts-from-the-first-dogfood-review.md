@@ -1,10 +1,10 @@
 ---
 id: BD-24
 title: walter papercuts from the first dogfood review
-status: To Do
+status: Review
 assignee: []
 created_date: '2026-08-23 02:18'
-updated_date: '2026-08-25 07:15'
+updated_date: '2026-08-25 11:31'
 labels: []
 dependencies: []
 parent_task_id: BD-31

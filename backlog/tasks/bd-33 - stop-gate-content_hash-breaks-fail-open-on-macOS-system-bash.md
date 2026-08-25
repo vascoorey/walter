@@ -1,10 +1,10 @@
 ---
 id: BD-33
 title: 'stop-gate: content_hash breaks fail-open on macOS system bash'
-status: Triage
+status: Review
 assignee: []
 created_date: '2026-08-25 09:56'
-updated_date: '2026-08-25 10:21'
+updated_date: '2026-08-25 11:21'
 labels: []
 dependencies: []
 parent_task_id: BD-37

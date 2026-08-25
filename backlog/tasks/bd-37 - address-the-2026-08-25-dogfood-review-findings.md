@@ -1,13 +1,13 @@
 ---
 id: BD-37
 title: address the 2026-08-25 dogfood review findings
-status: Pairing
+status: Review
 assignee: []
 created_date: '2026-08-25 10:09'
-updated_date: '2026-08-25 10:34'
+updated_date: '2026-08-25 11:20'
 labels: []
 dependencies: []
-ordinal: 26000
+ordinal: 2500
 ---
 
 ## Implementation Notes

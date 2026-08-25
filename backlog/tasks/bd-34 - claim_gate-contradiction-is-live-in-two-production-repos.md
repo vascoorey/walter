@@ -1,10 +1,10 @@
 ---
 id: BD-34
 title: claim_gate contradiction is live in two production repos
-status: Triage
+status: Review
 assignee: []
 created_date: '2026-08-25 09:56'
-updated_date: '2026-08-25 11:10'
+updated_date: '2026-08-25 11:21'
 labels: []
 dependencies: []
 parent_task_id: BD-37

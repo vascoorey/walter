@@ -1,14 +1,14 @@
 ---
 id: BD-35
 title: 'guards: two of four production firings were false positives'
-status: Triage
+status: To Do
 assignee: []
 created_date: '2026-08-25 09:56'
-updated_date: '2026-08-25 11:11'
+updated_date: '2026-08-25 11:20'
 labels: []
 dependencies: []
 parent_task_id: BD-37
-ordinal: 24000
+ordinal: 14000
 ---
 
 ## Description

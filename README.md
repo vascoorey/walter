@@ -81,7 +81,21 @@ hooks/scripts/guard-task-files.sh   CLI-only mutations; blocks rogue plan files 
 hooks/scripts/stop-gate.sh        red tests / dangling tasks block completion
 scripts/parent.sh                 human-run: bundle existing tasks under a parent
 templates/claude-md-section.md    per-repo contract template
+tests/                            behavioural suites for the hooks (see tests/README.md)
+tools/                            dogfood-review workflows + transcript extraction
 ```
+
+## Tests
+
+`tests/` holds 212 assertions across seven suites covering the human-only columns, the
+land-the-plane exits, column-aware rendering, the green cache, `parent.sh`'s failure
+path, and bash 3.2 portability. `bash tests/bd33-e2e.sh`, or loop over `tests/*-e2e.sh`.
+
+**They are not wired into the verification gate.** That gate is still a syntax check.
+These suites create git repos, write to `/tmp` and shell out to the `backlog` CLI, so a
+flaky one would block every stop in this repo rather than just failing a run. Wiring them
+in is tracked separately and needs its own judgement about what belongs on the hot path.
+Until then, run them by hand after touching a hook — nothing does it for you.
 
 ## Known sharp edges (v0.1)
 
