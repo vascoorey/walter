@@ -4,7 +4,7 @@ title: 'hooks: guard-transitions blocks read-only board queries'
 status: Review
 assignee: []
 created_date: '2026-08-23 02:17'
-updated_date: '2026-08-23 08:12'
+updated_date: '2026-08-25 11:11'
 labels: []
 dependencies: []
 ordinal: 7000
@@ -33,13 +33,5 @@ Found by BD-16 (dogfood review).
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
-DONE 2026-08-23. Root cause: board_cmd_touches_status in hooks/scripts/lib/board.sh required only the string 'backlog' plus a status flag, so a read-only filter was indistinguishable from a transition. Fix: also require a mutating subcommand, matched as <tool> (task|tasks) (edit|create). Tool name still comes from BOARD_TOOL so BD-11 stays mechanical.
-
-VERIFICATION: new suite scratchpad/bd18-e2e.sh, 27/27 green. Covers read-only passes (task list with the short flag, the long flag, the equals form, two filters at once, board with a status filter, and the pairing column) including the exact compound command observed being blocked in Riots-Vasco on 2026-08-23, verbatim from the transcript; mutating blocks retained (task edit and task create, all three flag spellings, quoted value, the 'tasks' alias, and a command prefixed by 'cd sub &&'); denial texts for both the gated and pairing paths asserted intact; non-gated and parking transitions still allowed; task-file write and rogue TODO.md guards unaffected; fail-open with no .board/config.json.
-
-REGRESSION: lib-e2e.sh 34/34 and pairing-e2e.sh 29/29 re-run unchanged. Verification gate green (bash -n across hooks/scripts and lib, jq parse of all three json manifests).
-
-RESIDUAL, documented not fixed: one command line that mixes a read-only status filter with an unrelated edit still blocks. Asserted in the suite so it stays a known quantity. Fixing it needs a shell parser, which the guards deliberately are not. README's sharp-edges bullet now names both false-positive classes and states read-only queries are exempt.
-
-FIELD NOTE: the OTHER known false positive, a gated status name inside quoted prose on a task edit, fired against this very command on the first attempt at writing these notes - the note described the residual using a literal example and was blocked. The ShannonAndTheRiots dogfood analysis reported that class never firing across roughly 40 board calls; it fires reliably as soon as the prose is ABOUT the board. Worth folding into BD-24 or a ticket of its own.
+Scope confirmed complete by the 2026-08-25 review, and confirmed NOT to cover the second production false positive. BD-18's scope was read-only status-filter queries reaching the transition matcher; current source requires an edit or create subcommand before it inspects a status flag, so that class is genuinely fixed, and the Riots-Vasco denial it addressed predates the BD-18 edit. The remaining Shannon false positive is a different predicate, the task-file write matcher, and belongs to BD-35. Recorded here so BD-35 is not closed as a duplicate of this and so this is not reopened for a defect it never covered.
 <!-- SECTION:NOTES:END -->
