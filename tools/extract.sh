@@ -4,9 +4,13 @@
 set -uo pipefail
 OUT=$1; shift
 mkdir -p "$OUT"
+# Repo label -> ~/.claude/projects transcript dir. A repo that has been renamed on disk
+# keeps BOTH entries under one label: history lives under the old dir forever. Do not
+# collapse these.
 declare -a DIRS=(
   "automation-pal:-Users-vascoorey-Developer-automation-pal"
   "walter:-Users-vascoorey-Developer-board-discipline"
+  "walter:-Users-vascoorey-Developer-walter"
   "riots-vasco:-Users-vascoorey-Riots-Vasco"
   "shannon:-Users-vascoorey-ShannonAndTheRiots"
 )
