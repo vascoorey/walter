@@ -53,6 +53,12 @@ content_hash() {
   # at ~2.7s per board-only turn against a ~400ms cache hit. Board ceremony paying
   # test latency is exactly backwards. Falls back to no exclusions if the lib is
   # missing, which costs cache hits rather than correctness.
+  #
+  # The ${a[@]+"${a[@]}"} expansions below are not decoration (BD-33): macOS ships
+  # bash 3.2, where a bare "${a[@]}" on an EMPTY array under `set -u` aborts the
+  # script. That empty case is exactly the lib-missing path this is meant to
+  # survive, so the plain form broke fail-open on a stock Mac while passing every
+  # test under homebrew bash 5.
   local EXCLUDES=()
   if command -v board_hash_exclude_pathspec >/dev/null 2>&1; then
     while IFS= read -r SPEC; do [ -n "$SPEC" ] && EXCLUDES+=("$SPEC"); done < <(board_hash_exclude_pathspec)
@@ -60,8 +66,8 @@ content_hash() {
   {
     printf '%s\n' "$TEST_CMD"
     git rev-parse HEAD 2>/dev/null
-    git diff HEAD -- . "${EXCLUDES[@]}" 2>/dev/null
-    git ls-files --others --exclude-standard -- . "${EXCLUDES[@]}" 2>/dev/null | while IFS= read -r F; do
+    git diff HEAD -- . ${EXCLUDES[@]+"${EXCLUDES[@]}"} 2>/dev/null
+    git ls-files --others --exclude-standard -- . ${EXCLUDES[@]+"${EXCLUDES[@]}"} 2>/dev/null | while IFS= read -r F; do
       [ -f "$F" ] && shasum "$F" 2>/dev/null
     done
   } | shasum | cut -d' ' -f1

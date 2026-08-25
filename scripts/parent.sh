@@ -124,7 +124,15 @@ fi
 # can be moved between parents. Everything outside the frontmatter is untouched.
 set_parent() {
   local FILE=$1 PID=$2 TMP
-  TMP=$(mktemp) || return 1
+  # The temp file lives beside the target so the final mv is a same-filesystem
+  # rename: the task file is either the old content or the new one, never a
+  # truncated in-between. BD-32 — the previous 'cat "$TMP" > "$FILE"' truncated
+  # first, ignored cat's status, and returned rm's, so a partial write destroyed
+  # the file AND reported success, and bundling carried on to the next child.
+  # cp -p seeds the temp with the original's mode; the redirect below replaces
+  # its contents without disturbing that.
+  TMP=$(mktemp "$(dirname "$FILE")/.parent.XXXXXX") || return 1
+  cp -p "$FILE" "$TMP" 2>/dev/null || { rm -f "$TMP"; return 1; }
   awk -v p="$PID" '
     BEGIN { fm = 0; done = 0 }
     /^---$/ {
@@ -136,8 +144,10 @@ set_parent() {
     { print }
     END { exit (done ? 0 : 1) }
   ' "$FILE" > "$TMP" || { rm -f "$TMP"; return 1; }
-  cat "$TMP" > "$FILE"
-  rm -f "$TMP"
+  # An empty rewrite would rename a valid task file into nothing. awk's exit
+  # status does not cover a write that failed midway, so check the result.
+  [ -s "$TMP" ] || { rm -f "$TMP"; return 1; }
+  mv -f "$TMP" "$FILE" || { rm -f "$TMP"; return 1; }
 }
 
 echo "Bundling under $PARENT_ID$($CREATED && printf ' (newly created)')"
