@@ -4,6 +4,7 @@ title: 'stop-gate: prompt for uncaptured context before the session closes'
 status: Triage
 assignee: []
 created_date: '2026-08-25 03:54'
+updated_date: '2026-08-25 09:56'
 labels: []
 dependencies: []
 ordinal: 18000
@@ -36,3 +37,9 @@ Interaction: BD-24 item 5 notes the block counter is deleted on every clean stop
 - [ ] #3 Interaction with the block counter and cap of 3 is decided deliberately, see BD-24 item 5
 - [ ] #4 Verified end-to-end in a scratch repo across both a trivial session and a substantive one
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Premise falsified by the 2026-08-25 codex review before any work started. This ticket assumes Stop is the session-end signal. It is not: one Riots-Vasco session (fcc4b76c) received five Stop prompts between 09:49 and 10:16, and the binding decision in backlog/decisions/ already records that Stop cannot detect a true session end. Prompting for uncaptured context at Stop would therefore fire repeatedly mid-session, which is the failure this repo calls redundant friction. Do not build as written. If the need is real, it needs a different trigger, and that is a new ticket rather than this one.
+<!-- SECTION:NOTES:END -->
